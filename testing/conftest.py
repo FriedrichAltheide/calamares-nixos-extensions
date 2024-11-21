@@ -107,6 +107,7 @@ def mock_open_kbdmodelmap(mocker):
 @pytest.fixture
 def mock_open(mocker, mock_open_hwconf, mock_open_kbdmodelmap):
     testing_dir = os.path.dirname(__file__)
+    testing_parent_dir = os.path.dirname(testing_dir)
 
     hwconf_txt = ""
     with open(os.path.join(testing_dir, "hardware-configuration.nix"), "r") as hwconf:
@@ -118,7 +119,7 @@ def mock_open(mocker, mock_open_hwconf, mock_open_kbdmodelmap):
 
     mock_open = mocker.Mock("open")
 
-    def fake_open(*args):
+    def fake_open(*args, **kwargs):
         file, mode, *_ = args
 
         assert mode == "r", "open() called without the 'r' mode"
@@ -129,6 +130,9 @@ def mock_open(mocker, mock_open_hwconf, mock_open_kbdmodelmap):
             return mocker.mock_open(
                 mock=mock_open_kbdmodelmap, read_data=kbdmodelmap_txt
             )(*args)
+        elif file.startswith("/run/current-system/sw/lib/calamares/modules/nixos/"):
+            redirectedFile = file.replace("/run/current-system/sw/lib/calamares/modules/nixos/", '{}/modules/nixos/'.format(testing_parent_dir))
+            return open(redirectedFile, *args, **kwargs)
         else:
             raise AssertionError(f"open() called with unexpected file '{file}'")
 
